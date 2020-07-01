@@ -2528,8 +2528,6 @@ template<typename T> void paramAction(uint8_t action, T& value, const __FlashStr
       break;
   }
 }
-uint32_t save_event_time = 0;
-uint32_t sec_event_time = 0;
 
 static uint8_t pwm_min = 0;    // PWM value for which PA reaches its minimum: 29 when C31 installed;   0 when C31 removed;   0 for biasing BS170 directly
 static uint8_t pwm_max = 220;  // PWM value for which PA reaches its maximum: 96 when C31 installed; 255 when C31 removed; 220 for biasing BS170 directly
@@ -2940,8 +2938,10 @@ void loop()
   delay(1);
 #endif
 
-  if(millis() > sec_event_time){
-    sec_event_time = millis() + 1000;  // schedule time next second
+  static unsigned long sec_event_time = 0;
+  static const unsigned long sec_event_period = 1000;
+  if(millis() - sec_event_time >= sec_event_period){
+    sec_event_time += sec_event_period;  // schedule time next second
 
 //#define LCD_REINIT
 #ifdef LCD_REINIT
@@ -3251,10 +3251,15 @@ void loop()
     }
   }
 
+  static unsigned long save_event_time = 0;
+  static bool save = false;
+  static const unsigned long save_event_period = 1000;
+
   if(change){
     change = false;
     if(prev_bandval != bandval){ freq = band[bandval]; prev_bandval = bandval; }
-    save_event_time = millis() + 1000;  // schedule time to save freq (no save while tuning, hence no EEPROM wear out)
+    save_event_time = millis();  // schedule time to save freq (no save while tuning, hence no EEPROM wear out)
+    save = true;
  
     if(menumode == 0){
       display_vfo(freq);
@@ -3278,9 +3283,9 @@ void loop()
     interrupts();
   }
   
-  if((save_event_time) && (millis() > save_event_time)){  // save freq when time has reached schedule
+  if(save && millis() - save_event_time >= save_event_period){  // save freq when time has reached schedule
     paramAction(SAVE, FREQ);  // save freq changes
-    save_event_time = 0;
+    save = false;
     //lcd.setCursor(15, 1); lcd.print("S"); delay(100); lcd.setCursor(15, 1); lcd.print("R");
   }
   
