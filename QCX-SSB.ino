@@ -730,7 +730,7 @@ ISR(PCINT2_vect){  // Interrupt on rotary encoder turn
   }
   //interrupts();
 }
-void encoder_setup()
+static void encoder_setup()
 {
   pinMode(ROT_A, INPUT_PULLUP);
   pinMode(ROT_B, INPUT_PULLUP);
@@ -1301,7 +1301,7 @@ volatile uint16_t numSamples = 0;
 volatile uint8_t tx = 0;
 volatile bool vox = false;
 
-inline void _vox(uint8_t trigger)
+static inline void _vox(uint8_t trigger)
 {
   if(trigger){
     //if(!tx){ /* TX can be enabled here */ }
@@ -1322,7 +1322,7 @@ inline void _vox(uint8_t trigger)
 //#define CARRIER_COMPLETELY_OFF_ON_LOW  1    // disable oscillator on no-envelope transitions, to prevent potential unwanted biasing/leakage through PA circuit
 #define MULTI_ADC  1  // multiple ADC conversions for more sensitive (+12dB) microphone input
 
-inline int16_t arctan3(int16_t q, int16_t i)  // error ~ 0.8 degree
+static inline int16_t arctan3(int16_t q, int16_t i)  // error ~ 0.8 degree
 { // source: [1] http://www-labs.iro.umontreal.ca/~mignotte/IFT2425/Documents/EfficientApproximationArctgFunction.pdf
 #define _atan2(z)  (_UA/8 - _UA/22 * z + _UA/22) * z  //derived from (5) [1]
   //#define _atan2(z)  (_UA/8 - _UA/24 * z + _UA/24) * z  //derived from (7) [1]
@@ -1339,10 +1339,10 @@ inline int16_t arctan3(int16_t q, int16_t i)  // error ~ 0.8 degree
 
 uint8_t lut[256];
 volatile uint8_t amp;
-volatile uint8_t vox_thresh = (1 << 2);
+static volatile uint8_t vox_thresh = (1 << 2);
 volatile uint8_t drive = 2;   // hmm.. drive>2 impacts cpu load..why?
 
-inline int16_t ssb(int16_t in)
+static inline int16_t ssb(int16_t in)
 {
   static int16_t dc;
 
@@ -1398,7 +1398,7 @@ volatile int8_t volume = 12;
 // This is the ADC ISR, issued with sample-rate via timer1 compb interrupt.
 // It performs in real-time the ADC sampling, calculation of SSB phase-differences, calculation of SI5351 frequency registers and send the registers to SI5351 over I2C.
 static int16_t _adc;
-void dsp_tx()
+static void dsp_tx()
 { // jitter dependent things first
 #ifdef MULTI_ADC  // SSB with multiple ADC conversions:
   int16_t adc;                         // current ADC sample 10-bits analog input, NOTE: first ADCL, then ADCH
@@ -1441,18 +1441,18 @@ const uint32_t tones[] = {325, 700};
 
 volatile int16_t p_sin = 0;   // initialized with A*sin(0) = 0
 volatile int16_t n_cos = 448/2; // initialized with A*cos(t) = A
-inline void process_minsky() // Minsky circle sample [source: https://www.cl.cam.ac.uk/~am21/hakmemc.html, ITEM 149]: p_sin+=n_cos*2*PI*f/fs; n_cos-=p_sin*2*PI*f/fs;
+static inline void process_minsky() // Minsky circle sample [source: https://www.cl.cam.ac.uk/~am21/hakmemc.html, ITEM 149]: p_sin+=n_cos*2*PI*f/fs; n_cos-=p_sin*2*PI*f/fs;
 {
   uint8_t alpha100 = tones[cw_tone]/*cw_offset*/ * 628 / F_SAMP_TX;  // alpha = f_tone * 6.28 / fs
   p_sin += alpha100 * n_cos / 100;
   n_cos -= alpha100 * p_sin / 100;
 }
 
-void dummy()
+static void dummy()
 {
 }
 
-void dsp_tx_cw()
+static void dsp_tx_cw()
 { // jitter dependent things first
   OCR1BL = lut[255];
   
@@ -1460,7 +1460,7 @@ void dsp_tx_cw()
   OCR1AL = (p_sin >> (16 - volume)) + 128;
 }
 
-void dsp_tx_am()
+static void dsp_tx_am()
 { // jitter dependent things first
   ADCSRA |= (1 << ADSC);    // start next ADC conversion (trigger ADC interrupt if ADIE flag is set)
   OCR1BL = amp;                        // submit amplitude to PWM register (actually this is done in advance (about 140us) of phase-change, so that phase-delays in key-shaping circuit filter can settle)
@@ -1476,7 +1476,7 @@ void dsp_tx_am()
 }
 
 uint8_t reg;
-void dsp_tx_dsb()
+static void dsp_tx_dsb()
 { // jitter dependent things first
   ADCSRA |= (1 << ADSC);    // start next ADC conversion (trigger ADC interrupt if ADIE flag is set)
   OCR1BL = amp;                        // submit amplitude to PWM register (actually this is done in advance (about 140us) of phase-change, so that phase-delays in key-shaping circuit filter can settle)
@@ -1489,7 +1489,7 @@ void dsp_tx_dsb()
   amp=in;// lut[in];
 }
 
-void dsp_tx_fm()
+static void dsp_tx_fm()
 { // jitter dependent things first
   ADCSRA |= (1 << ADSC);    // start next ADC conversion (trigger ADC interrupt if ADIE flag is set)
   OCR1BL = lut[255];                   // submit amplitude to PWM register (actually this is done in advance (about 140us) of phase-change, so that phase-delays in key-shaping circuit filter can settle)
@@ -1513,7 +1513,7 @@ static int16_t ta=0;
 static const char m2c[] PROGMEM = "**ETIANMSURWDKGOHVF*L*PJBXCYZQ**54S3***2**+***J16=/***H*7*G*8*90************?_****\"**.****@***'**-********;!*)*****,****:****";
 static uint8_t nsamp=0;
 
-char cw(int16_t in)
+static char cw(int16_t in)
 {
   char ch = 0;
   int i;
@@ -1575,7 +1575,7 @@ volatile uint8_t _init;
 
 //static uint32_t gain = 1024;
 static int16_t gain = 1024;
-inline int16_t process_agc(int16_t in)
+static inline int16_t process_agc(int16_t in)
 {
   //int16_t out = ((uint32_t)(gain) >> 20) * in;
   //gain = gain + (1024 - abs(out) + 512);
@@ -1589,7 +1589,7 @@ inline int16_t process_agc(int16_t in)
   return out;
 }
 
-inline int16_t process_nr_old(int16_t ac)
+static inline int16_t process_nr_old(int16_t ac)
 {
   ac = ac >> (6-abs(ac));  // non-linear below amp of 6; to reduce noise (switchoff agc and tune-up volume until noise dissapears, todo:extra volume control needed)
   ac = ac << 3;
@@ -1599,7 +1599,7 @@ inline int16_t process_nr_old(int16_t ac)
 #define EA(y, x, one_over_alpha)  (y) = (y) + ((x) - (y)) / (one_over_alpha); // exponental averaging [Lyons 13.33.1]
 #define MLEA(y, x, L, M)  (y)  = (y) + ((((x) - (y)) >> (L)) - (((x) - (y)) >> (M))); // multiplierless exponental averaging [Lyons 13.33.1], with alpha=1/2^L - 1/2^M
 
-inline int16_t process_nr_old2(int16_t ac)
+static inline int16_t process_nr_old2(int16_t ac)
 {  
   int16_t x = ac;
   static int16_t ea1;
@@ -1611,7 +1611,7 @@ inline int16_t process_nr_old2(int16_t ac)
   return ea1;
 }
 
-inline int16_t process_nr(int16_t in)
+static inline int16_t process_nr(int16_t in)
 { 
 /*
   static int16_t avg;
@@ -1643,7 +1643,7 @@ param_c = avg;
 volatile int8_t filt = 0;
 int8_t prev_filt[] = { 0 , 4 }; // default filter for modes resp. CW, SSB
 
-inline int16_t filt_var(int16_t za0)  //filters build with www.micromodeler.com
+static inline int16_t filt_var(int16_t za0)  //filters build with www.micromodeler.com
 { 
   static int16_t za1,za2;
   static int16_t zb0,zb1,zb2;
@@ -1729,7 +1729,7 @@ static uint32_t absavg256 = 0;
 volatile uint32_t _absavg256 = 0;
 volatile int16_t i, q;
 
-inline int16_t slow_dsp(int16_t ac)
+static inline int16_t slow_dsp(int16_t ac)
 {
   static uint8_t absavg256cnt;
   if(!(absavg256cnt--)){ _absavg256 = absavg256; absavg256 = 0; 
@@ -1812,7 +1812,7 @@ volatile uint8_t rx_state = 0;
 // H1(z) = (1 + z^-1)^2 = 1 + 2*z^-1 + z^-2 = (1 + z^-2) + (2) * z^-1 = FA(z) + FB(z) * z^-1;
 // with down-sampling before stage translates into poly-phase components: FA(z) = 1 + z^-1, FB(z) = 2
 // source: Lyons Understanding Digital Signal Processing 3rd edition 13.24.1
-void sdr_rx()
+static void sdr_rx()
 {
   // process I for even samples  [75% CPU@R=4;Fs=62.5k] (excluding the Comb branch and output stage)
   ADMUX = admux[1];  // set MUX for next conversion
@@ -1875,7 +1875,7 @@ void sdr_rx()
   rx_state++;
 }
 
-void sdr_rx_q()
+static void sdr_rx_q()
 {
   // process Q for odd samples  [75% CPU@R=4;Fs=62.5k] (excluding the Comb branch and output stage)
   ADMUX = admux[0];  // set MUX for next conversion
@@ -1921,7 +1921,7 @@ void sdr_rx_q()
   rx_state++;
 }
 
-inline void sdr_rx_common()
+static inline void sdr_rx_common()
 {
   static int16_t ozi1, ozi2;
   if(_init){ ocomb=0; ozi1 = 0; ozi2 = 0; } // hack
@@ -1950,7 +1950,7 @@ static struct rx {
   int16_t _za1;
 } rx_inst[2];
 
-void sdr_rx()
+static void sdr_rx()
 {
   static int16_t ocomb;
   static int16_t qh;
@@ -2046,7 +2046,7 @@ ISR(TIMER2_COMPA_vect)  // Timer2 COMPA interrupt
 #endif
 }
 
-void adc_start(uint8_t adcpin, bool ref1v1, uint32_t fs)
+static void adc_start(uint8_t adcpin, bool ref1v1, uint32_t fs)
 {
 #ifndef AUTO_ADC_BIAS
   DIDR0 |= (1 << adcpin); // disable digital input
@@ -2067,7 +2067,7 @@ void adc_start(uint8_t adcpin, bool ref1v1, uint32_t fs)
 #endif
 }
 
-void adc_stop()
+static void adc_stop()
 {
   //ADCSRA &= ~(1 << ADATE); // disable auto trigger
   ADCSRA &= ~(1 << ADIE);  // disable interrupts when measurement complete
@@ -2078,7 +2078,7 @@ void adc_stop()
   ADMUX = (1 << REFS0);  // restore reference voltage AREF (5V)
 }
 
-void timer1_start(uint32_t fs)
+static void timer1_start(uint32_t fs)
 {  // Timer 1: OC1A and OC1B in PWM mode
   TCCR1A = 0;
   TCCR1B = 0;
@@ -2094,13 +2094,13 @@ void timer1_start(uint32_t fs)
   OCR1BL = 0x00;  // OC1B (KEY_OUT) PWM duty-cycle (span defined by ICR).
 }
 
-void timer1_stop()
+static void timer1_stop()
 {
   OCR1AL = 0x00;
   OCR1BL = 0x00;
 }
 
-void timer2_start(uint32_t fs)
+static void timer2_start(uint32_t fs)
 {  // Timer 2: interrupt mode
   ASSR &= ~(1 << AS2);  // Timer 2 clocked from CLK I/O (like Timer 0 and 1)
   TCCR2A = 0;
@@ -2113,7 +2113,7 @@ void timer2_start(uint32_t fs)
   OCR2A = ocr;
 }
 
-void timer2_stop()
+static void timer2_stop()
 { // Stop Timer 2 interrupt
   TIMSK2 &= ~(1 << OCIE2A);  // disable timer compare interrupt
   delay(1);  // wait until potential in-flight interrupts are finished
@@ -2195,7 +2195,7 @@ const byte fonts[N_FONTS][8] PROGMEM = {
   0b00000 }
 };
 
-int analogSafeRead(uint8_t pin)
+static int analogSafeRead(uint8_t pin)
 {  // performs classical analogRead with default Arduino sample-rate and analog reference setting; restores previous settings
   noInterrupts();
   uint8_t adcsra = ADCSRA;
@@ -2215,7 +2215,7 @@ enum dsp_cap_t { ANALOG, DSP, SDR };
 uint8_t dsp_cap = 0;
 uint8_t ssb_cap = 0;
 
-uint16_t analogSampleMic()
+static uint16_t analogSampleMic()
 {
   uint16_t adc;
   noInterrupts();
@@ -2237,7 +2237,7 @@ volatile int32_t freq = 7074000;
 int8_t smode = 1;
 
 float dbm_max;
-float smeter(float ref = 5)  //= 10*log(8000/2400)=5  ref to 2.4kHz BW.  plus some other calibration factor
+static float smeter(float ref = 5)  //= 10*log(8000/2400)=5  ref to 2.4kHz BW.  plus some other calibration factor
 {
   if(smode == 0){ // none, no s-meter
     return 0;
@@ -2270,7 +2270,7 @@ float smeter(float ref = 5)  //= 10*log(8000/2400)=5  ref to 2.4kHz BW.  plus so
   return dbm;
 }
 
-void start_rx()
+static void start_rx()
 {
   _init = 1;
   rx_state = 0;
@@ -2287,7 +2287,7 @@ void start_rx()
   TCCR1A &= ~(1 << COM1B1); digitalWrite(KEY_OUT, LOW); // disable KEY_OUT PWM
 }
 
-void switch_rxtx(uint8_t tx_enable){
+static void switch_rxtx(uint8_t tx_enable){
   tx = tx_enable;
   TIMSK2 &= ~(1 << OCIE2A);  // disable timer compare interrupt
   //delay(1);
@@ -2336,7 +2336,7 @@ void switch_rxtx(uint8_t tx_enable){
 #ifdef CAL_IQ
 int16_t cal_iq_dummy = 0;
 // RX I/Q calibration procedure: terminate with 50 ohm, enable CW filter, adjust R27, R24, R17 subsequently to its minimum side-band rejection value in dB
-void calibrate_iq()
+static void calibrate_iq()
 {
   smode = 1;
   lcd.setCursor(0, 0); lcd.print(blanks); lcd.print(blanks);
@@ -2378,7 +2378,7 @@ int32_t stepsizes[10] = { 10000000, 1000000, 500000, 100000, 10000, 1000, 500, 1
 volatile int8_t stepsize = STEP_1k;
 int8_t prev_stepsize[] = { STEP_1k, STEP_500 }; //default stepsize for resp. SSB, CW
 
-void process_encoder_tuning_step(int8_t steps)
+static void process_encoder_tuning_step(int8_t steps)
 {
   int32_t stepval = stepsizes[stepsize];
   //if(stepsize < STEP_100) freq %= 1000; // when tuned and stepsize > 100Hz then forget fine-tuning details
@@ -2387,13 +2387,13 @@ void process_encoder_tuning_step(int8_t steps)
   change = true;
 }
 
-void stepsize_showcursor()
+static void stepsize_showcursor()
 {
   lcd.setCursor(stepsize+1, 1);  // display stepsize with cursor
   lcd.cursor();
 }
 
-void stepsize_change(int8_t val)
+static void stepsize_change(int8_t val)
 {
   stepsize += val;
   if(stepsize < STEP_1M) stepsize = STEP_10;
@@ -2402,7 +2402,7 @@ void stepsize_change(int8_t val)
   stepsize_showcursor();
 }
 
-void powerDown()
+static void powerDown()
 { // Reduces power from 110mA to 70mA (back-light on) or 30mA (back-light off), remaining current is probably opamp quiescent current
   lcd.setCursor(0, 1); lcd.print(F("Power-off 73 :-)")); lcd_blanks();
 
@@ -2449,7 +2449,7 @@ void powerDown()
   do { wdt_enable(WDTO_15MS); for(;;); } while(0);  // soft reset by trigger watchdog timeout
 }
 
-void show_banner(){
+static void show_banner(){
   lcd.setCursor(0, 0);
 #ifdef QCX
   lcd.print(F("QCX"));
@@ -2463,7 +2463,7 @@ void show_banner(){
 
 static const char* const mode_label[5] = { "LSB", "USB", "CW ", "AM ", "FM " };
 
-void display_vfo(uint32_t f){
+static void display_vfo(uint32_t f){
   lcd.setCursor(0, 1);
   lcd.print('\x06');  // VFO A/B
 
@@ -2545,7 +2545,7 @@ static const char* const band_label[N_BANDS] = { "80m", "60m", "40m", "30m", "20
 
 enum params_t {ALL, VOLUME, MODE, FILTER, BAND, STEP, AGC, NR, ATT, ATT2, SMETER, CWDEC, CWTONE, CWOFF, VOX, VOXGAIN, MOX, DRIVE, SIFXTAL, PWM_MIN, PWM_MAX, CALIB, SR, CPULOAD, PARAM_A, PARAM_B, PARAM_C, FREQ, VERS};
 
-void paramAction(uint8_t action, uint8_t id = ALL)  // list of parameters
+static void paramAction(uint8_t action, uint8_t id = ALL)  // list of parameters
 {
   if((action == SAVE) || (action == LOAD)){
     eeprom_addr = EEPROM_OFFSET;
@@ -2595,7 +2595,7 @@ void paramAction(uint8_t action, uint8_t id = ALL)  // list of parameters
   }
 }
 
-void initPins(){  
+static void initPins(){
   // initialize
   digitalWrite(SIG_OUT, LOW);
   digitalWrite(RX, HIGH);
@@ -2628,7 +2628,7 @@ void initPins(){
 #endif
 }
 
-void setup()
+static void setup()
 {
   digitalWrite(KEY_OUT, LOW);  // for safety: to prevent exploding PA MOSFETs, in case there was something still biasing them.
 
@@ -2901,7 +2901,7 @@ void setup()
 #endif
 }
 
-void print_char(uint8_t in){  // Print char in second line of display and scroll right.
+static void print_char(uint8_t in){  // Print char in second line of display and scroll right.
   for(int i = 0; i!= 15; i++) out[i] = out[i+1];
   out[15] = in;
   out[16] = '\0';
@@ -2912,7 +2912,7 @@ static char cat[20];  // temporary here
 static uint8_t nc = 0;
 static uint16_t cat_cmd = 0;
 
-void parse_cat(uint8_t in){   // TS480 CAT protocol:  https://www.kenwood.com/i/products/info/amateur/ts_480/pdf/ts_480_pc.pdf
+static void parse_cat(uint8_t in){   // TS480 CAT protocol:  https://www.kenwood.com/i/products/info/amateur/ts_480/pdf/ts_480_pc.pdf
   if(nc == 0) cat_cmd = in << 8;
   if(nc == 1) cat_cmd += in;
   if(in == ';'){  // end of cat command -> parse and process
