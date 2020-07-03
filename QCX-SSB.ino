@@ -1510,7 +1510,7 @@ static int16_t k0=0;
 static int16_t k1=0;
 static uint8_t sym;
 static int16_t ta=0;
-const char m2c[] PROGMEM = "**ETIANMSURWDKGOHVF*L*PJBXCYZQ**54S3***2**+***J16=/***H*7*G*8*90************?_****\"**.****@***'**-********;!*)*****,****:****";
+static const char m2c[] PROGMEM = "**ETIANMSURWDKGOHVF*L*PJBXCYZQ**54S3***2**+***J16=/***H*7*G*8*90************?_****\"**.****@***'**-********;!*)*****,****:****";
 static uint8_t nsamp=0;
 
 char cw(int16_t in)
@@ -2453,7 +2453,7 @@ void show_banner(){
   lcd.setCursor(0, 0);
 #ifdef QCX
   lcd.print(F("QCX"));
-  const char* cap_label[] = { "SSB", "DSP", "SDR" };
+  static const char* const cap_label[] = { "SSB", "DSP", "SDR" };
   if(ssb_cap || dsp_cap){ lcd.print(F("-")); lcd.print(cap_label[dsp_cap]); }
 #else
   lcd.print(F("uSDX"));
@@ -2461,7 +2461,7 @@ void show_banner(){
   lcd.print(F("\x01 ")); lcd_blanks();
 }
 
-const char* mode_label[5] = { "LSB", "USB", "CW ", "AM ", "FM " };
+static const char* const mode_label[5] = { "LSB", "USB", "CW ", "AM ", "FM " };
 
 void display_vfo(uint32_t f){
   lcd.setCursor(0, 1);
@@ -2491,7 +2491,7 @@ int eeprom_addr;
 
 // Support functions for parameter and menu handling
 enum action_t { UPDATE, UPDATE_MENU, LOAD, SAVE, SKIP };
-template<typename T> void paramAction(uint8_t action, T& value, const __FlashStringHelper* menuid, const __FlashStringHelper* label, const char* enumArray[], int32_t _min, int32_t _max, bool continuous){
+template<typename T> void paramAction(uint8_t action, T& value, const __FlashStringHelper* menuid, const __FlashStringHelper* label, const char* const enumArray[], int32_t _min, int32_t _max, bool continuous){
   switch(action){
     case UPDATE:
     case UPDATE_MENU:
@@ -2534,9 +2534,9 @@ uint32_t sec_event_time = 0;
 static uint8_t pwm_min = 0;    // PWM value for which PA reaches its minimum: 29 when C31 installed;   0 when C31 removed;   0 for biasing BS170 directly
 static uint8_t pwm_max = 220;  // PWM value for which PA reaches its maximum: 96 when C31 installed; 255 when C31 removed; 220 for biasing BS170 directly
 
-const char* offon_label[2] = {"OFF", "ON"};
-const char* filt_label[N_FILT+1] = { "Full", "4000", "2500", "1700", "500", "200", "100", "50" };
-const char* band_label[N_BANDS] = { "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m" };
+static const char* const offon_label[2] = {"OFF", "ON"};
+static const char* const filt_label[N_FILT+1] = { "Full", "4000", "2500", "1700", "500", "200", "100", "50" };
+static const char* const band_label[N_BANDS] = { "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m" };
 
 #define _N(a) sizeof(a)/sizeof(a[0])
 
@@ -2553,10 +2553,10 @@ void paramAction(uint8_t action, uint8_t id = ALL)  // list of parameters
   }
   if(id == ALL) for(id = 1; id != N_ALL_PARAMS+1; id++) paramAction(action, id);  // for all parameters
   
-  const char* stepsize_label[10] = { "10M", "1M", "0.5M", "100k", "10k", "1k", "0.5k", "100", "10", "1" };
-  const char* att_label[] = { "0dB", "-13dB", "-20dB", "-33dB", "-40dB", "-53dB", "-60dB", "-73dB" };
-  const char* smode_label[4] = { "OFF", "dBm", "S", "S-bar" };
-  const char* cw_tone_label[4] = { "325", "700" };
+  static const char* const stepsize_label[10] = { "10M", "1M", "0.5M", "100k", "10k", "1k", "0.5k", "100", "10", "1" };
+  static const char* const att_label[] = { "0dB", "-13dB", "-20dB", "-33dB", "-40dB", "-53dB", "-60dB", "-73dB" };
+  static const char* const smode_label[4] = { "OFF", "dBm", "S", "S-bar" };
+  static const char* const cw_tone_label[4] = { "325", "700" };
   switch(id){
     // Visible parameters
     case VOLUME:  paramAction(action, volume, F("1.1"), F("Volume"), NULL, -1, 16, false); break;
