@@ -7,13 +7,14 @@
 #define VERSION   "1.02m"
 
 #define DIAG            1   // Hardware diagnostics on startup (frees memory when disabled)
-#define KEYER           1   // CW keyer
-#define CAT             1   // CAT-interface
-#define F_XTAL 27005000     // 27MHz SI5351 crystal
+//#define KEYER           1   // CW keyer
+//#define CAT             1   // CAT-interface
+//#define F_XTAL 27005000     // 27MHz SI5351 crystal
 //#define F_XTAL 25004000   // 25MHz SI5351 crystal  (enable for WB2CBA-uSDX or SI5351 break-out board)
+#define F_XTAL 27003796
 //#define SWAP_ROTARY   1   // Swap rotary direction (enable for WB2CBA-uSDX)
 //#define QCX           1   // Supports older (non-SDR) QCX HW modifications (QCX, QCX-SSB, QCX-DSP with I/Q alignment-feature)
-//#define OLED          1   // OLED display, connect SDA (PD2), SCL (PD3)
+#define OLED          1   // OLED display, connect SDA (PD2), SCL (PD3)
 //#define DEBUG         1   // for development purposes only (frees cpu&memory when disabled, adds debugging features such as CPU, sample-rate measurement, additional parameters)
 //#define TESTBENCH     1
 
@@ -360,7 +361,7 @@ public:
 I2C_ Wire;
 //#include <Wire.h>
 
-/* // 6x8 technoblogy font
+// 6x8 technoblogy font
 const uint8_t font[]PROGMEM = {
    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
    0x00, 0x00, 0x5F, 0x00, 0x00, 0x00, 
@@ -463,8 +464,8 @@ const uint8_t font[]PROGMEM = {
 #define FONT_H 2
 #define FONT_STRETCHV 1
 #define FONT_STRETCHH 1//0
-*/
 
+/*
 // C64 real
 const uint8_t font[]PROGMEM = {
    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -568,8 +569,10 @@ const uint8_t font[]PROGMEM = {
 #define FONT_H 2
 #define FONT_STRETCHV 1
 #define FONT_STRETCHH 0
+*/
 
-/*  //16x8 C-64 kind of
+/*
+//16x8 C-64 kind of
 const uint8_t font[]PROGMEM = {
    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,  // 0x20
    0x00,0x06,0x5F,0x5F,0x06,0x00,0x00,0x00, // 0x21
@@ -674,36 +677,36 @@ const uint8_t font[]PROGMEM = {
 #define FONT_STRETCHH 0
 */
 
-#define BRIGHT  1
+#define BRIGHT  0
 static const uint8_t ssd1306_init_sequence [] PROGMEM = {  // Initialization Sequence
-//  0xAE,     // Display OFF (sleep mode)
-    0x20, 0b10,   // Set Memory Addressing Mode
-          // 00=Horizontal Addressing Mode; 01=Vertical Addressing Mode;
-          // 10=Page Addressing Mode (RESET); 11=Invalid
- 0xB0,     // Set Page Start Address for Page Addressing Mode, 0-7
+  //  0xAE,     // Display OFF (sleep mode)
+  0x20, 0b10,   // Set Memory Addressing Mode
+                // 00=Horizontal Addressing Mode; 01=Vertical Addressing Mode;
+                // 10=Page Addressing Mode (RESET); 11=Invalid
+  0xB0,     // Set Page Start Address for Page Addressing Mode, 0-7
   0xC8,     // Set COM Output Scan Direction.  Flip Veritically.
- 0x00,     // Set low nibble of column address
- 0x10,     // Set high nibble of column address
-   0x40,     // Set display start line address
+  0x00,     // Set low nibble of column address
+  0x10,     // Set high nibble of column address
+  0x40,     // Set display start line address
 #ifdef BRIGHT
   0x81, /*32*/ 0x7F,   // Set contrast control register
 #else
   0x81, 32,   // Set contrast control register
 #endif
   0xA1,     // Set Segment Re-map. A0=column 0 mapped to SEG0; A1=column 127 mapped to SEG0. Flip Horizontally
-   0xA6,     // Set display mode. A6=Normal; A7=Inverse
+  0xA6,     // Set display mode. A6=Normal; A7=Inverse
   0xA8, 0x1F,   // Set multiplex ratio(1 to 64)
-   0xA4,     // Output RAM to Display
-          // 0xA4=Output follows RAM content; 0xA5,Output ignores RAM content
+  0xA4,     // Output RAM to Display
+        // 0xA4=Output follows RAM content; 0xA5,Output ignores RAM content
   0xD3, 0x00,   // Set display offset. 00 = no offset
-   0xD5, 0x80,   // --set display clock divide ratio/oscillator frequency
+  0xD5, 0x01,   // orig value 0x80--set display clock divide ratio/oscillator frequency
 #ifdef BRIGHT
   0xD9, 0xF1, // 0xF1=brighter //0x22,   // Set pre-charge period
 #else
-  0xD9, 0x22,   // Set pre-charge period
+  0xD9, 0x03,   // 0x22Set pre-charge period
 #endif
   0xDA, 0x02,   // Set com pins hardware configuration
-//   0xDB, 0x40, //0x20,   // --set vcomh 0x20 = 0.77xVcc
+  0xDB, 0x05, //0x20,   // --set vcomh 0x20 = 0.77xVcc
   0x8D, 0x14,    // Set DC-DC enable
   0xAF,     // Display ON
 };
